@@ -9,9 +9,24 @@ import SwiftUI
 
 struct ContentView: View {
     @State private var showSecondView = false
+    @State private var options =
+    [
+        "Take out the trash",
+        "Play video games",
+        "Work on 3390 Project",
+        "Sleep"
+    ]
     
     var body: some View {
         VStack {
+            
+            List{
+                ForEach(options, id: \.self) { option in
+                    Text(option)
+                }
+                .onDelete(perform: deleteItems)
+            }
+            
             Button(action: {
                 showSecondView = true
             }) {
@@ -26,6 +41,10 @@ struct ContentView: View {
             }
         }
         .padding()
+    }
+    
+    func deleteItems(at offsets: IndexSet) {
+        options.remove(atOffsets: offsets)
     }
 }
 
