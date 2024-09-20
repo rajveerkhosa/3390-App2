@@ -1,17 +1,31 @@
 import SwiftUI
+import Foundation   //  Framework for Generating Random Numbers
 
+//  Defines Struct to represent options
+//  Conforms to Identifiable Protocol ?
+struct Option: Identifiable {
+    let id = UUID()     // Makes a Unique ID for every option
+    let name: String
+    let weight: Int
+}
+
+//  Main View
 struct ContentView: View {
     @State private var showSecondView = false
     @State private var showChoiceView = false
-    @State private var options =
+    
+    //  Initialize some Sample Options
+    @State private var options: [Option] =
     [
-        "Take out the trash",
-        "Play video games",
-        "Work on 3390 Project",
-        "Sleep"
+        Option(name: "Take out the trash", weight: 1),
+        Option(name: "Play video games", weight: 5),
+        Option(name: "Work on 3390 Project", weight: 10),
+        Option(name: "Sleep", weight: 2)
     ]
+    
     @State private var decidedChoice = "" // To store the decision
     
+    //  View that Defines Visual Structure/Layout
     var body: some View {
         VStack(spacing: 20) {
             
@@ -20,39 +34,45 @@ struct ContentView: View {
                 Text("Your Options")
                     .frame(maxWidth: .infinity, alignment: .center) // Centers the text horizontally
                     .font(.headline)
-                    .padding(.top, 0) // Adjust this value to control the top spacing
-                Spacer()
-             
-        
-                // Use a flexible frame for better scroll behavior
+                    .padding(.top, 0)
+                Spacer()    //  Adds space to push elements down
+                
                 List {
-                    ForEach(options, id: \.self) { option in
-                        Text(option)
-                            .padding(.vertical, 5)
+                    ForEach(options)
+                    { option in
+                        HStack  // <-- Makes it so each option is shown in a horizontal stack
+                        {
+                            Text(option.name)
+                            Spacer()
+                            Text("\(option.weight)")
+                                .foregroundColor(.gray)
+                        }
+                        .padding(.vertical, 5)
                     }
                     .onDelete(perform: deleteItems)
                     
                 }
-                .listStyle(PlainListStyle()) // A simpler list style with less built-in padding
-                .padding(.top, 10) // Adjust this if needed
-                .frame(maxHeight: 600) // Ensure enough height to enable scrolling
+                .listStyle(PlainListStyle()) // Simple list style
+                .padding(.top, 10)
+                .frame(maxHeight: 600)
                 .cornerRadius(10)
                 
             }
             
-            // Add and Decide buttons stacked with padding
+            // Visual Stack for Add and Decide buttons
             VStack(spacing: 15) {
                 Button(action: {
                     showSecondView = true
                 }) {
                     Text("Add New Option")
-                        .frame(maxWidth: .infinity)
+                        .frame(maxWidth: .infinity) // Makes button expand to max width of container
                         .padding()
                         .background(Color.black)
                         .foregroundColor(.white)
                         .cornerRadius(10)
                 }
                 .padding(.horizontal)
+                //  Pass showSecondView binding and options array to SecondView
                 .sheet(isPresented: $showSecondView) {
                     SecondView(showSecondView: $showSecondView, options: $options)
                 }
@@ -68,8 +88,11 @@ struct ContentView: View {
                         .cornerRadius(10)
                 }
                 .padding(.horizontal)
+                //  Alert Modifier to show popup with decided choice
                 .alert(isPresented: $showChoiceView) {
-                    Alert(title: Text("Your Choice"), message: Text(decidedChoice), dismissButton: .default(Text("OK")))
+                    Alert(title: Text("Your Choice"),
+                          message: Text(decidedChoice),
+                          dismissButton: .default(Text("OK")))
                 }
             }
         }
@@ -81,18 +104,45 @@ struct ContentView: View {
         options.remove(atOffsets: offsets)
     }
     
-    // Function to make a random choice and trigger the alert
+    // Function to make a random choice
     func decideOption() {
-        guard !options.isEmpty else { return }
-        decidedChoice = options.randomElement() ?? ""
+        guard !options.isEmpty else { return }  //  Makes sure list isn't empty
+        
+        //  Calculates total weight
+        let totalWeight = options.reduce(0) { $0 + $1.weight }
+        
+        //  Generates random number within total weight
+        let randomNumber = Int.random(in: 0..<totalWeight)
+        
+        //  Tracks cumulativeWeight
+        var cumulativeWeight = 0
+        
+        //  Iterate through each option
+        for option in options
+        {
+            cumulativeWeight += option.weight   //  Adds option's weight to cumulative total
+            if randomNumber < cumulativeWeight  //  If randomNumber is less than cumulative
+            {
+                decidedChoice = option.name     //  Set the selected option
+                break                           //  Stop the loop once option is selected
+            }
+            
+        }
+        
+        //  Show alert with selected option
         showChoiceView = true
     }
 }
 
+//  View for adding new option
 struct SecondView: View {
+    //  Bindings pass values from parent
     @Binding var showSecondView: Bool
-    @Binding var options: [String]
-    @State private var newOption = ""
+    @Binding var options: [Option]
+    
+    //  State variables are for input fields
+    @State private var newOptionName = ""
+    @State private var newOptionWeight = ""
     
     var body: some View {
         VStack(spacing: 20) {
@@ -100,16 +150,25 @@ struct SecondView: View {
                 .font(.title2)
                 .fontWeight(.bold)
             
-            TextField("Enter New Option", text: $newOption)
+            //  Text field for entering a new option
+            TextField("Enter New Option", text: $newOptionName)
                 .textFieldStyle(RoundedBorderTextFieldStyle())
                 .padding(.horizontal)
             
-            // Add and Cancel buttons with spacing
+            //  Text field for entering new option weight
+            TextField("Enter Weight", text: $newOptionWeight)
+                .keyboardType(.numberPad) // Ensures only numbers can be entered
+                .textFieldStyle(RoundedBorderTextFieldStyle())
+                .padding(.horizontal)
+            
+            // Vertical Stack for Add and Cancel buttons
             VStack(spacing: 15) {
                 Button(action: {
-                    if !newOption.isEmpty {
-                        options.append(newOption)
-                        showSecondView = false
+                    //  If the inputs are good
+                    if let weight = Int(newOptionWeight), !newOptionName.isEmpty
+                    {
+                        options.append(Option(name: newOptionName, weight: weight)) //  Adds new option to list
+                        showSecondView = false  //  Closes the view
                     }
                 }) {
                     Text("Add")
@@ -121,6 +180,7 @@ struct SecondView: View {
                 }
                 .padding(.horizontal)
                 
+                //  Button to cancel adding new option
                 Button(action: {
                     showSecondView = false
                 }) {
@@ -138,9 +198,11 @@ struct SecondView: View {
     }
 }
 
+/*
+//  Preview struct for Xcode's SwiftUI preview ?
 struct ContentView_Previews: PreviewProvider {
     static var previews: some View {
         ContentView()
     }
 }
-
+*/
