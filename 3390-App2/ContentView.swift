@@ -110,8 +110,11 @@ struct ContentView: View {
         
         //  Calculates total weight
         let totalWeight = options.reduce(0) { $0 + $1.weight }
+        //  $0 is an accumulator, so it starts at 0 and then accumulates the sum
+        //  $1 represents each Option object in the list
+        //  $1.weight refers to weight of each option.
         
-        //  Generates random number within total weight
+        //  Generates random number between 0 and totalWeight
         let randomNumber = Int.random(in: 0..<totalWeight)
         
         //  Tracks cumulativeWeight
@@ -197,12 +200,3 @@ struct SecondView: View {
         .padding()
     }
 }
-
-/*
-//  Preview struct for Xcode's SwiftUI preview ?
-struct ContentView_Previews: PreviewProvider {
-    static var previews: some View {
-        ContentView()
-    }
-}
-*/
